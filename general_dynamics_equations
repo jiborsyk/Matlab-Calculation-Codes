@@ -1,0 +1,101 @@
+%NEW VELOCITY CODE%
+clc
+clear
+
+%pod mass (kg)
+m = 181;
+
+%FORCE FROM MOTOR%
+eff = 0.92; %motor effeciency
+T = 80*eff; %torque (Nm)
+r = 0.14;
+n = 1;
+while r <= 0.16
+    Fm(n) = T/r; %force at wheels (N)
+    R(n) = r;
+    r = r + 0.05; %incriment of increasing the radius
+    n = n + 1;
+end
+
+%display the radius vs motor force to console
+disp('   radius(m) force(N)')
+M = [R;Fm]';
+disp(M)
+
+%FRICTION FORCE%
+u = 0.0015; %coeffecient of friction
+Ff = m*u;
+
+%DRAG DATA%
+coefDrag = 0.5;
+crossArea=4; %m^2
+rho= 0.0108;
+dragconstant = coefDrag*rho*crossArea/2;
+
+%FUNCTION FOR GAS THRUST%
+%Create a function for the force created by the gas thruster versus time
+%template:
+%syms F(t)
+%Fthrust = function related to time
+
+%VELOCITY FUNCTION
+for i = 1:numel(Fm)
+    syms v(t);
+    eqn = diff(v,t)== (Fm(i) - Ff - dragconstant*v^2)/m; %differential equation that includes all forces, add gas force after Fm(i)
+    [vSol(t)] = dsolve(eqn,v(0)==0); %equation for velocity
+
+%populate array with velocity values corresponding to time values    
+    t = 0;
+    incriment = 0.5; %time incriment
+    n = 1;
+    max_time = 60;
+    while t<max_time
+        V(n) =  double(vSol(t));
+        t = t + incriment;
+        n = n + 1;
+    end 
+    t = (0:incriment:max_time);
+    t(end) = [];
+    M = [t;V]'; %matrix with time and velocity (m/s)
+    
+    %plot velocity vs distance%
+    
+    
+    
+    %GRAPH
+    V_mph_withdrag = V*2.23694; 
+    V_mph_nodrag = ((Fm(i)+Ff)/m)*t*2.23694;
+   
+    p = 1+i;
+    %plot(t,V_mph_withdrag, 'LineWidth', p*.5);
+    hold on
+    %plot(t,V_mph_nodrag,'LineWidth', p*.5);
+    %legend('Drag','No Drag','Location','northwest')
+    xlabel('time (s)')
+    ylabel('velocity (mph)')
+
+    V_mph_withdrag(max_time);
+    
+    % %TOP SPEED THEORETICALLY
+    c = 2*pi*R; %circumference
+    RPS = 100; %rotations per second
+    topspd(1:numel(t)) = c(i)*RPS*2.23694;
+    %plot(t,topspd,'LineWidth', p*.5)
+    
+    %create and plot vector where the lower
+    for z = 1:numel(V_mph_withdrag);
+        if topspd(z) > V_mph_withdrag(z)
+            K(z) = V_mph_withdrag(z);
+        else K(z) = topspd(z)
+        end 
+    end 
+    plot(t,K,'LineWidth',(p^2)*.66)
+    hold off
+    
+    
+            
+            
+%     L = [t;V_mph_withdrag]';
+%     disp('time(s)    V with Drag (MPH)')
+%     disp(L)
+end 
